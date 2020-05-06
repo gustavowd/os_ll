@@ -1,9 +1,10 @@
 #include "port.h"
 
-#define with_scheduler 1
 #define sched_prio 0
 #define sched_circ 1
-#define use_linked_list 1
+
+#define with_scheduler 1
+#define sched sched_prio
 
 #define null (void*)0
 
@@ -43,11 +44,7 @@ extern volatile cpu_t ct;
 extern volatile cpu_t it;
 extern TCB_t *current_task;
 
-#if (use_linked_list == 1)
-void InstallTask(TCB_t *ptask, task_t task, cpu_t prio, cpu_t *stk, int stk_size);
-#else
-void InstallTask(task_t task, cpu_t prio, cpu_t *stk, int stk_size); 
-#endif
+void InstallTask(TCB_t *tcb, task_t task, cpu_t prio, cpu_t *stk, int stk_size);
 
 void delay(long long timeout);
 void start_os(void);

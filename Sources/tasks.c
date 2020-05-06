@@ -27,12 +27,12 @@ void task2(void) {
 sem_t semaf;
 void task3(void) {
   int i = 0;
-  sem_init(&semaf);
+  (void)sem_init(&semaf);
   for(;;){
     i++;
     #if with_scheduler == 1
     delay(30);
-    sem_post(&semaf);
+    (void)sem_post(&semaf);
     #else
     yield();
     #endif
@@ -44,6 +44,6 @@ void task4(void) {
   int i = 0;
   for(;;){
     i++;
-    sem_pend(&semaf, 300);
+      (void)sem_pend(&semaf, 300);
   }
 }

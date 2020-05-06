@@ -21,21 +21,8 @@ interrupt void SwitchContext(void){
   SAVE_CONTEXT();
   SAVE_SP();
 
-#if with_scheduler == 1
   current_task->stk=stk_tmp;
-#else
-  TCB[ct].stk=stk_tmp;
-#endif
-  
-#if with_scheduler == 1
   stk_tmp = scheduler();  
-#else
-  ct++;
-  if (ct >= it){
-    ct = 0;
-  }
-  stk_tmp = TCB[ct].stk;
-#endif
   
   RESTORE_SP();
   RESTORE_CONTEXT();
@@ -57,11 +44,7 @@ interrupt void TickTimer(void){
     SAVE_CONTEXT();
     SAVE_SP();
     
-    #if (use_linked_list == 1)
     current_task->stk=stk_tmp;
-    #else 
-    TCB[ct].stk=stk_tmp;
-    #endif
     stk_tmp = scheduler();
   
     RESTORE_SP();  

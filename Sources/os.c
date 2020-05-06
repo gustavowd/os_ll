@@ -1,11 +1,7 @@
 #include "os.h"
 #include <stdlib.h>
 
-#if (use_linked_list == 1)
 TCB_t tcb_idle;
-#else
-volatile TCB_t TCB[4];
-#endif
 cpu_t idle_stk[128];
 
 volatile cpu_t ct = 0;
@@ -18,35 +14,13 @@ list_t timelist = {null, null};
 TCB_t *current_task;
 
 
-#define sched sched_prio
-
 void idle(void) {
   for(;;){
     // dorme aqui
   }
 }
 
-#if (use_linked_list == 0)
-cpu_t *scheduler(void){
-  cpu_t i = 0;
-  cpu_t higher_prio = 0;
-  cpu_t higher_task = 0;
-  
-  for(i=0;i<it;i++){
-    if(TCB[i].ready == 1){
-      if (TCB[i].prio >= higher_prio){
-        higher_prio = TCB[i].prio;
-        higher_task = i;
-      }
-    }
-  }
-  ct = higher_task;
-  return TCB[higher_task].stk;
-}
-#endif
 
-
-#if (use_linked_list == 1)
 cpu_t *scheduler(void){
 #if (sched == sched_prio)
   TCB_t *ptask = readylist.head;
@@ -72,16 +46,11 @@ cpu_t *scheduler(void){
 #endif
   return current_task->stk;
 }
-#endif
  
    
 
 void start_os(void){
-#if (use_linked_list == 1)
   InstallTask(&tcb_idle, idle, 0, idle_stk, sizeof(idle_stk));
-#else
-  InstallTask(idle, 0, idle_stk, sizeof(idle_stk));
-#endif
   init_os_timer();
   
   #if sched == sched_prio
@@ -96,21 +65,15 @@ void start_os(void){
 
 
 void delay(long long timeout){
-  #if (use_linked_list == 1)
   TCB_t *ptask = current_task;
   ptask->timeout = timeout + os_time;
   RemoveFromList(ptask, &readylist);
   IncludeTaskIntoList(ptask, &timelist);
-  #else
-  TCB[ct].timeout = timeout + os_time;
-  TCB[ct].ready = 0;
-  #endif
   yield();
 }
 
 
 cpu_t os_inc_and_compare(void){
-#if use_linked_list == 1)
   TCB_t *ptask = timelist.head;
   TCB_t *tmp_task;
   cpu_t ready = 0; 
@@ -132,38 +95,16 @@ cpu_t os_inc_and_compare(void){
   }  
   
   return ready;
-#else
-  int i;
-  cpu_t ready = 0;
-  os_time++;
-  
-  for(i=0;i<it;i++){
-    if(TCB[i].timeout == os_time){
-      TCB[i].ready = 1;
-      ready = 1;
-    }
-  }
-  
-  return ready;
-#endif
 }
 
 
-#if (use_linked_list == 1)
-void InstallTask(TCB_t *ptask, task_t task, cpu_t prio, cpu_t *stk, int stk_size){
-  ptask->stk = PrepareStack(task, stk, stk_size);
-  ptask->prio = prio;
-  ptask->event = null;
-  ptask->event_type = 0;
-  IncludeTaskIntoList(ptask, &readylist);
+void InstallTask(TCB_t *tcb, task_t task, cpu_t prio, cpu_t *stk, int stk_size){
+  tcb->stk = PrepareStack(task, stk, stk_size);
+  tcb->prio = prio;
+  tcb->event = null;
+  tcb->event_type = 0;
+  IncludeTaskIntoList(tcb, &readylist);
   it++;
-#else
-void InstallTask(task_t task, cpu_t prio, cpu_t *stk, int stk_size)  
-  TCB[it].stk = PrepareStack(task, stk, stk_size);
-  TCB[it].prio = prio;
-  TCB[it].ready = 1;
-  it++;
-#endif
 }
 
 
@@ -232,7 +173,6 @@ void remove_event(TCB_t *ptask){
 }
 
 
-#if (use_linked_list == 1)
 void RemoveFromList(TCB_t *ptask, list_t *list){  
     if(ptask == list->head){               
       if(ptask == list->tail){                
@@ -273,4 +213,3 @@ void IncludeTaskIntoList(TCB_t *ptask, list_t *list){
        ptask->previous = NULL;
     }
 }
-#endif
